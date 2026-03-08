@@ -1,6 +1,7 @@
 // --- Config ---
 let SERVER_URL = 'http://localhost:5050';
 
+// --- Init ---
 document.addEventListener('DOMContentLoaded', async () => {
   // Load saved config
   const saved = await chrome.storage.local.get(['serverUrl', 'outputDir']);
@@ -11,6 +12,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (saved.outputDir) {
     document.getElementById('outputDir').value = saved.outputDir;
   }
+
+  // Bind all event listeners
+  document.getElementById('configToggle').addEventListener('click', () => toggleSection('configBody'));
+  document.getElementById('logToggle').addEventListener('click', () => toggleSection('logBody'));
+  document.getElementById('btnSaveConfig').addEventListener('click', saveConfig);
+  document.getElementById('btnSaveDir').addEventListener('click', saveOutputDir);
+  document.getElementById('btnMerge').addEventListener('click', () => runStep('merge'));
+  document.getElementById('btnAnalyze').addEventListener('click', () => runStep('analyze'));
+  document.getElementById('btnFilter').addEventListener('click', () => runStep('filter'));
+  document.getElementById('btnRunAll').addEventListener('click', runAll);
+
   checkServer();
 });
 
@@ -28,47 +40,8 @@ async function saveOutputDir() {
     return;
   }
   await chrome.storage.local.set({ outputDir: dir });
-  document.getElementById('dirStatus').textContent = `✅ Saved: ${dir}`;
-  log(`Output directory saved: ${dir}`, 'success');
-}
-
-async function browseOutputDir() {
-  try {
-    // Use File System Access API to pick a directory
-    const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
-    // We can't get the full path from the API, so ask the server to resolve it
-    // Instead, show the folder name and let user confirm/edit the full path
-    const name = dirHandle.name;
-    const currentVal = document.getElementById('outputDir').value.trim();
-
-    // Try to guess full path from common locations
-    const suggestions = [
-      `/home/aatif/${name}`,
-      `/home/aatif/Desktop/${name}`,
-      `/home/aatif/Downloads/${name}`,
-      `/tmp/${name}`,
-      name
-    ];
-
-    // Pre-fill with best guess
-    let bestGuess = `/home/aatif/${name}`;
-    if (currentVal && currentVal.includes('/')) {
-      // Use parent of current value
-      const parent = currentVal.substring(0, currentVal.lastIndexOf('/'));
-      bestGuess = `${parent}/${name}`;
-    }
-
-    document.getElementById('outputDir').value = bestGuess;
-    document.getElementById('dirStatus').textContent =
-      `Selected: "${name}" → verify the full path above and click 💾 Save`;
-    log(`Browsed folder: ${name}. Please verify the full path and save.`, 'info');
-  } catch (e) {
-    if (e.name === 'AbortError') return; // User cancelled
-    // Fallback: just let them type
-    log('Folder picker not available. Please type the full path manually.', 'warn');
-    document.getElementById('dirStatus').textContent =
-      'Type the full path (e.g. /home/aatif/pcap-output) and click 💾 Save';
-  }
+  document.getElementById('dirStatus').textContent = '✅ Saved: ' + dir;
+  log('Output directory saved: ' + dir, 'success');
 }
 
 // --- Server Status ---
@@ -76,7 +49,7 @@ async function checkServer() {
   const dot = document.getElementById('statusDot');
   const text = document.getElementById('statusText');
   try {
-    const res = await fetch(`${SERVER_URL}/health`, { signal: AbortSignal.timeout(3000) });
+    const res = await fetch(SERVER_URL + '/health', { signal: AbortSignal.timeout(3000) });
     if (res.ok) {
       dot.className = 'dot connected';
       text.textContent = 'Server connected';
@@ -97,7 +70,7 @@ function toggleSection(id) {
 }
 
 function setButtonsState(disabled) {
-  ['btnMerge', 'btnAnalyze', 'btnFilter', 'btnRunAll'].forEach(id => {
+  ['btnMerge', 'btnAnalyze', 'btnFilter', 'btnRunAll'].forEach(function(id) {
     document.getElementById(id).disabled = disabled;
   });
 }
@@ -105,16 +78,21 @@ function setButtonsState(disabled) {
 function showProgress(show, pct) {
   const bar = document.getElementById('progressBar');
   const fill = document.getElementById('progressFill');
-  bar.classList.toggle('hidden', !show);
+  if (show) {
+    bar.classList.remove('hidden');
+  } else {
+    bar.classList.add('hidden');
+  }
   if (pct !== undefined) fill.style.width = pct + '%';
 }
 
-function log(msg, type = '') {
+function log(msg, type) {
+  type = type || '';
   const el = document.getElementById('log');
   const line = document.createElement('div');
   line.className = type;
   const ts = new Date().toLocaleTimeString('en-US', { hour12: false });
-  line.textContent = `[${ts}] ${msg}`;
+  line.textContent = '[' + ts + '] ' + msg;
   el.appendChild(line);
   el.scrollTop = el.scrollHeight;
 }
@@ -134,14 +112,28 @@ function showFiles(files) {
   }
 
   section.classList.remove('hidden');
-  files.forEach(f => {
+  files.forEach(function(f) {
     const item = document.createElement('div');
     item.className = 'file-item';
-    item.innerHTML = `
-      <span class="name">${f.name}</span>
-      <span class="size">${formatSize(f.size)}</span>
-      <button class="download-btn" onclick="downloadFile('${f.name}')">⬇ Download</button>
-    `;
+
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'name';
+    nameSpan.textContent = f.name;
+
+    const sizeSpan = document.createElement('span');
+    sizeSpan.className = 'size';
+    sizeSpan.textContent = formatSize(f.size);
+
+    const dlBtn = document.createElement('button');
+    dlBtn.className = 'download-btn';
+    dlBtn.textContent = '⬇ Download';
+    dlBtn.addEventListener('click', function() {
+      downloadFile(f.name);
+    });
+
+    item.appendChild(nameSpan);
+    item.appendChild(sizeSpan);
+    item.appendChild(dlBtn);
     list.appendChild(item);
   });
 }
@@ -153,20 +145,20 @@ function formatSize(bytes) {
 }
 
 // --- API Calls ---
-async function uploadFiles() {
-  const fullPcap = document.getElementById('fullPcap').files[0];
-  const sipPcap = document.getElementById('sipPcap').files[0];
+function getFormData() {
+  var fullPcap = document.getElementById('fullPcap').files[0];
+  var sipPcap = document.getElementById('sipPcap').files[0];
 
   if (!fullPcap || !sipPcap) {
     log('Please select both PCAP files', 'error');
     return null;
   }
 
-  const formData = new FormData();
+  var formData = new FormData();
   formData.append('full_pcap', fullPcap);
   formData.append('sip_pcap', sipPcap);
 
-  const outputDir = document.getElementById('outputDir').value;
+  var outputDir = document.getElementById('outputDir').value.trim();
   if (outputDir) {
     formData.append('output_dir', outputDir);
   }
@@ -180,34 +172,34 @@ async function runStep(step) {
     return;
   }
 
-  const formData = await uploadFiles();
+  var formData = getFormData();
   if (!formData) return;
 
   formData.append('step', step);
 
   setButtonsState(true);
   showProgress(true, 30);
-  log(`Running step: ${step}...`, 'info');
+  log('Running step: ' + step + '...', 'info');
 
   try {
-    const res = await fetch(`${SERVER_URL}/process`, {
+    var res = await fetch(SERVER_URL + '/process', {
       method: 'POST',
       body: formData
     });
 
-    const data = await res.json();
+    var data = await res.json();
     showProgress(true, 100);
 
     if (data.success) {
       handleResult(data, step);
     } else {
-      log(`Error: ${data.error}`, 'error');
+      log('Error: ' + data.error, 'error');
     }
   } catch (e) {
-    log(`Request failed: ${e.message}`, 'error');
+    log('Request failed: ' + e.message, 'error');
   } finally {
     setButtonsState(false);
-    setTimeout(() => showProgress(false), 500);
+    setTimeout(function() { showProgress(false); }, 500);
   }
 }
 
@@ -217,7 +209,7 @@ async function runAll() {
     return;
   }
 
-  const formData = await uploadFiles();
+  var formData = getFormData();
   if (!formData) return;
 
   formData.append('step', 'all');
@@ -227,54 +219,51 @@ async function runAll() {
   log('═══ Running all steps... ═══', 'info');
 
   try {
-    const res = await fetch(`${SERVER_URL}/process`, {
+    var res = await fetch(SERVER_URL + '/process', {
       method: 'POST',
       body: formData
     });
 
     showProgress(true, 90);
-    const data = await res.json();
+    var data = await res.json();
     showProgress(true, 100);
 
     if (data.success) {
       handleResult(data, 'all');
     } else {
-      log(`Error: ${data.error}`, 'error');
+      log('Error: ' + data.error, 'error');
     }
   } catch (e) {
-    log(`Request failed: ${e.message}`, 'error');
+    log('Request failed: ' + e.message, 'error');
   } finally {
     setButtonsState(false);
-    setTimeout(() => showProgress(false), 500);
+    setTimeout(function() { showProgress(false); }, 500);
   }
 }
 
 function handleResult(data, step) {
-  // Log messages
   if (data.logs) {
-    data.logs.forEach(l => {
-      const type = l.includes('✅') ? 'success' :
-                   l.includes('ERROR') ? 'error' :
-                   l.includes('⚠️') ? 'warn' : '';
+    data.logs.forEach(function(l) {
+      var type = '';
+      if (l.indexOf('✅') >= 0) type = 'success';
+      else if (l.indexOf('ERROR') >= 0) type = 'error';
+      else if (l.indexOf('⚠️') >= 0) type = 'warn';
       log(l, type);
     });
   }
 
-  // Signaling IPs
   if (data.signaling_ips) {
     setResult('signalingIps', data.signaling_ips.join(', ') || '—');
   }
 
-  // SDP Media IPs
   if (data.sdp_media_ips) {
     setResult('sdpIps', data.sdp_media_ips.join(', ') || '—');
   }
 
-  // Files
   if (data.files) {
-    setResult('exportedFiles', `${data.files.length} file(s)`);
+    setResult('exportedFiles', data.files.length + ' file(s)');
     showFiles(data.files);
-    log(`🎉 Done! ${data.files.length} file(s) exported`, 'success');
+    log('🎉 Done! ' + data.files.length + ' file(s) exported', 'success');
   }
 
   if (step === 'merge') {
@@ -284,20 +273,20 @@ function handleResult(data, step) {
 
 async function downloadFile(filename) {
   try {
-    const res = await fetch(`${SERVER_URL}/download/${encodeURIComponent(filename)}`);
+    var res = await fetch(SERVER_URL + '/download/' + encodeURIComponent(filename));
     if (!res.ok) {
-      log(`Download failed: ${res.statusText}`, 'error');
+      log('Download failed: ' + res.statusText, 'error');
       return;
     }
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    var blob = await res.blob();
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
     a.href = url;
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
-    log(`Downloaded: ${filename}`, 'success');
+    log('Downloaded: ' + filename, 'success');
   } catch (e) {
-    log(`Download failed: ${e.message}`, 'error');
+    log('Download failed: ' + e.message, 'error');
   }
 }

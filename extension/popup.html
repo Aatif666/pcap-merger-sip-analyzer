@@ -16,14 +16,14 @@
 
     <!-- Server Config -->
     <section class="section collapsible" id="configSection">
-      <div class="section-header" onclick="toggleSection('configBody')">
+      <div class="section-header" id="configToggle">
         ⚙️ Server Config <span class="arrow" id="configBodyArrow">▸</span>
       </div>
       <div class="section-body hidden" id="configBody">
         <div class="field-row">
           <label>Server URL:</label>
           <input type="text" id="serverUrl" value="http://localhost:5050" />
-          <button class="btn-sm" onclick="saveConfig()">Save</button>
+          <button class="btn-sm" id="btnSaveConfig">Save</button>
         </div>
       </div>
     </section>
@@ -36,14 +36,12 @@
           <label>Full PCAP:</label>
           <div class="file-input">
             <input type="file" id="fullPcap" accept=".pcap,.pcapng,.cap" />
-            <span class="file-name" id="fullPcapName">No file selected</span>
           </div>
         </div>
         <div class="field-row">
           <label>SIP PCAP:</label>
           <div class="file-input">
             <input type="file" id="sipPcap" accept=".pcap,.pcapng,.cap" />
-            <span class="file-name" id="sipPcapName">No file selected</span>
           </div>
         </div>
       </div>
@@ -55,23 +53,22 @@
       <div class="section-body">
         <div class="field-row">
           <label>Save to:</label>
-          <input type="text" id="outputDir" placeholder="Type path or click Browse" />
-          <button class="btn-sm" onclick="browseOutputDir()">📁 Browse</button>
-          <button class="btn-sm" onclick="saveOutputDir()">💾 Save</button>
+          <input type="text" id="outputDir" placeholder="Type path e.g. /home/aatif/pcap-output" />
+          <button class="btn-sm" id="btnSaveDir">💾 Save</button>
         </div>
         <div class="field-row" style="margin-top:4px">
           <label></label>
-          <span style="font-size:11px;color:#8899a6" id="dirStatus">Type a path and click Save, or Browse to pick a folder</span>
+          <span style="font-size:11px;color:#8899a6" id="dirStatus">Type the full path and click Save</span>
         </div>
       </div>
     </section>
 
     <!-- Actions -->
     <div class="actions">
-      <button class="btn" onclick="runStep('merge')" id="btnMerge">1️⃣ Merge</button>
-      <button class="btn" onclick="runStep('analyze')" id="btnAnalyze">2️⃣ Analyze</button>
-      <button class="btn" onclick="runStep('filter')" id="btnFilter">3️⃣ Filter</button>
-      <button class="btn btn-primary" onclick="runAll()" id="btnRunAll">🚀 Run All</button>
+      <button class="btn" id="btnMerge">1️⃣ Merge</button>
+      <button class="btn" id="btnAnalyze">2️⃣ Analyze</button>
+      <button class="btn" id="btnFilter">3️⃣ Filter</button>
+      <button class="btn btn-primary" id="btnRunAll">🚀 Run All</button>
     </div>
 
     <!-- Progress -->
@@ -106,7 +103,7 @@
 
     <!-- Log -->
     <section class="section">
-      <div class="section-header" onclick="toggleSection('logBody')">
+      <div class="section-header" id="logToggle">
         📋 Log <span class="arrow" id="logBodyArrow">▾</span>
       </div>
       <div class="section-body" id="logBody">
