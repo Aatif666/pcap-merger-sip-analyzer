@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🦈 PCAP Merger & SIP Analyzer</h1>
+      <div class="server-status" id="serverStatus">
+        <span class="dot" id="statusDot"></span>
+        <span id="statusText">Checking server...</span>
+      </div>
+    </header>
+
+    <!-- Server Config -->
+    <section class="section collapsible" id="configSection">
+      <div class="section-header" onclick="toggleSection('configBody')">
+        ⚙️ Server Config <span class="arrow" id="configBodyArrow">▸</span>
+      </div>
+      <div class="section-body hidden" id="configBody">
+        <div class="field-row">
+          <label>Server URL:</label>
+          <input type="text" id="serverUrl" value="http://localhost:5050" />
+          <button class="btn-sm" onclick="saveConfig()">Save</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- File Selection -->
+    <section class="section">
+      <div class="section-header">📁 File Selection</div>
+      <div class="section-body">
+        <div class="field-row">
+          <label>Full PCAP:</label>
+          <div class="file-input">
+            <input type="file" id="fullPcap" accept=".pcap,.pcapng,.cap" />
+            <span class="file-name" id="fullPcapName">No file selected</span>
+          </div>
+        </div>
+        <div class="field-row">
+          <label>SIP PCAP:</label>
+          <div class="file-input">
+            <input type="file" id="sipPcap" accept=".pcap,.pcapng,.cap" />
+            <span class="file-name" id="sipPcapName">No file selected</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Output Directory -->
+    <section class="section">
+      <div class="section-header">📂 Output Directory</div>
+      <div class="section-body">
+        <div class="field-row">
+          <label>Save to:</label>
+          <input type="text" id="outputDir" placeholder="/path/to/output" />
+          <button class="btn-sm" onclick="saveOutputDir()">💾</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Actions -->
+    <div class="actions">
+      <button class="btn" onclick="runStep('merge')" id="btnMerge">1️⃣ Merge</button>
+      <button class="btn" onclick="runStep('analyze')" id="btnAnalyze">2️⃣ Analyze</button>
+      <button class="btn" onclick="runStep('filter')" id="btnFilter">3️⃣ Filter</button>
+      <button class="btn btn-primary" onclick="runAll()" id="btnRunAll">🚀 Run All</button>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-bar hidden" id="progressBar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <!-- Results -->
+    <section class="section" id="resultsSection">
+      <div class="section-header">📊 Results</div>
+      <div class="section-body">
+        <div class="result-row">
+          <span class="result-label">Signaling IPs:</span>
+          <span class="result-value" id="signalingIps">—</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">SDP Media IPs:</span>
+          <span class="result-value" id="sdpIps">—</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">Exported Files:</span>
+          <span class="result-value" id="exportedFiles">—</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Exported Files List -->
+    <section class="section hidden" id="filesSection">
+      <div class="section-header">📎 Download Files</div>
+      <div class="section-body" id="filesList"></div>
+    </section>
+
+    <!-- Log -->
+    <section class="section">
+      <div class="section-header" onclick="toggleSection('logBody')">
+        📋 Log <span class="arrow" id="logBodyArrow">▾</span>
+      </div>
+      <div class="section-body" id="logBody">
+        <div class="log" id="log"></div>
+      </div>
+    </section>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
