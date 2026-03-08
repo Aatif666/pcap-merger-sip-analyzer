@@ -22,6 +22,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('btnAnalyze').addEventListener('click', () => runStep('analyze'));
   document.getElementById('btnFilter').addEventListener('click', () => runStep('filter'));
   document.getElementById('btnRunAll').addEventListener('click', runAll);
+  document.getElementById('btnDownload').addEventListener('click', function() {
+    downloadFile('filtered_signaling_and_media.pcap');
+  });
 
   checkServer();
 });
@@ -102,40 +105,20 @@ function setResult(id, value) {
 }
 
 function showFiles(files) {
-  const section = document.getElementById('filesSection');
-  const list = document.getElementById('filesList');
-  list.innerHTML = '';
-
+  var section = document.getElementById('downloadSection');
   if (!files || files.length === 0) {
     section.classList.add('hidden');
     return;
   }
-
-  section.classList.remove('hidden');
-  files.forEach(function(f) {
-    const item = document.createElement('div');
-    item.className = 'file-item';
-
-    const nameSpan = document.createElement('span');
-    nameSpan.className = 'name';
-    nameSpan.textContent = f.name;
-
-    const sizeSpan = document.createElement('span');
-    sizeSpan.className = 'size';
-    sizeSpan.textContent = formatSize(f.size);
-
-    const dlBtn = document.createElement('button');
-    dlBtn.className = 'download-btn';
-    dlBtn.textContent = '⬇ Download';
-    dlBtn.addEventListener('click', function() {
-      downloadFile(f.name);
-    });
-
-    item.appendChild(nameSpan);
-    item.appendChild(sizeSpan);
-    item.appendChild(dlBtn);
-    list.appendChild(item);
+  // Check if the combined file exists in the results
+  var hasFiltered = files.some(function(f) {
+    return f.name === 'filtered_signaling_and_media.pcap';
   });
+  if (hasFiltered) {
+    section.classList.remove('hidden');
+  } else {
+    section.classList.add('hidden');
+  }
 }
 
 function formatSize(bytes) {
