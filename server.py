@@ -311,6 +311,31 @@ def process():
     })
 
 
+@app.route('/validate-dir', methods=['POST'])
+def validate_dir():
+    """Validate and optionally create an output directory."""
+    data = request.get_json() or {}
+    path = data.get('path', '')
+    create = data.get('create', False)
+
+    if not path:
+        return jsonify({"valid": False, "error": "No path provided"})
+
+    path = os.path.expanduser(path)
+
+    if os.path.isdir(path):
+        return jsonify({"valid": True, "path": path})
+
+    if create:
+        try:
+            os.makedirs(path, exist_ok=True)
+            return jsonify({"valid": True, "path": path, "created": True})
+        except Exception as e:
+            return jsonify({"valid": False, "error": str(e)})
+
+    return jsonify({"valid": False, "error": "Directory does not exist"})
+
+
 @app.route('/download/<filename>', methods=['GET'])
 def download(filename):
     # Check work dir and output dir

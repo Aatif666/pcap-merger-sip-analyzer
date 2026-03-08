@@ -55,8 +55,13 @@
       <div class="section-body">
         <div class="field-row">
           <label>Save to:</label>
-          <input type="text" id="outputDir" placeholder="/path/to/output" />
-          <button class="btn-sm" onclick="saveOutputDir()">💾</button>
+          <input type="text" id="outputDir" placeholder="Type path or click Browse" />
+          <button class="btn-sm" onclick="browseOutputDir()">📁 Browse</button>
+          <button class="btn-sm" onclick="saveOutputDir()">💾 Save</button>
+        </div>
+        <div class="field-row" style="margin-top:4px">
+          <label></label>
+          <span style="font-size:11px;color:#8899a6" id="dirStatus">Type a path and click Save, or Browse to pick a folder</span>
         </div>
       </div>
     </section>

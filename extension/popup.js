@@ -22,9 +22,53 @@ async function saveConfig() {
 }
 
 async function saveOutputDir() {
-  const dir = document.getElementById('outputDir').value;
+  const dir = document.getElementById('outputDir').value.trim();
+  if (!dir) {
+    log('Please enter a directory path', 'error');
+    return;
+  }
   await chrome.storage.local.set({ outputDir: dir });
-  log('Output directory saved', 'success');
+  document.getElementById('dirStatus').textContent = `✅ Saved: ${dir}`;
+  log(`Output directory saved: ${dir}`, 'success');
+}
+
+async function browseOutputDir() {
+  try {
+    // Use File System Access API to pick a directory
+    const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+    // We can't get the full path from the API, so ask the server to resolve it
+    // Instead, show the folder name and let user confirm/edit the full path
+    const name = dirHandle.name;
+    const currentVal = document.getElementById('outputDir').value.trim();
+
+    // Try to guess full path from common locations
+    const suggestions = [
+      `/home/aatif/${name}`,
+      `/home/aatif/Desktop/${name}`,
+      `/home/aatif/Downloads/${name}`,
+      `/tmp/${name}`,
+      name
+    ];
+
+    // Pre-fill with best guess
+    let bestGuess = `/home/aatif/${name}`;
+    if (currentVal && currentVal.includes('/')) {
+      // Use parent of current value
+      const parent = currentVal.substring(0, currentVal.lastIndexOf('/'));
+      bestGuess = `${parent}/${name}`;
+    }
+
+    document.getElementById('outputDir').value = bestGuess;
+    document.getElementById('dirStatus').textContent =
+      `Selected: "${name}" → verify the full path above and click 💾 Save`;
+    log(`Browsed folder: ${name}. Please verify the full path and save.`, 'info');
+  } catch (e) {
+    if (e.name === 'AbortError') return; // User cancelled
+    // Fallback: just let them type
+    log('Folder picker not available. Please type the full path manually.', 'warn');
+    document.getElementById('dirStatus').textContent =
+      'Type the full path (e.g. /home/aatif/pcap-output) and click 💾 Save';
+  }
 }
 
 // --- Server Status ---
