@@ -268,7 +268,11 @@ async function downloadFile(filename) {
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
-    log('Downloaded: ' + filename, 'success');
+
+    // Refresh the session after download
+    setTimeout(function() {
+      window.location.reload();
+    }, 1000);
   } catch (e) {
     log('Download failed: ' + e.message, 'error');
   }
