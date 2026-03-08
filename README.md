@@ -1,6 +1,6 @@
 # PCAP Merger & SIP Analyzer
 
-Chrome Extension + Python backend to merge PCAPs, extract SIP/SDP media IPs, and filter RTP/signaling streams.
+Chrome Extension + Python backend to merge PCAPs, extract SIP/SDP media IPs, and filter RTP/signaling streams into a single downloadable PCAP.
 
 ---
 
@@ -9,7 +9,6 @@ Chrome Extension + Python backend to merge PCAPs, extract SIP/SDP media IPs, and
 - **Python 3.8+**
 - **Wireshark CLI tools** (`tshark`, `mergecap`)
 - **Google Chrome**
-- **Flask** and **flask-cors** Python packages
 
 ---
 
@@ -64,9 +63,9 @@ After=network.target
 
 [Service]
 Type=simple
-User=$USER
-WorkingDirectory=$HOME/pcap-merger-sip-analyzer
-ExecStart=/usr/bin/python3 $HOME/pcap-merger-sip-analyzer/server.py
+User=YOUR_USERNAME
+WorkingDirectory=/home/YOUR_USERNAME/pcap-merger-sip-analyzer
+ExecStart=/usr/bin/python3 /home/YOUR_USERNAME/pcap-merger-sip-analyzer/server.py
 Restart=always
 RestartSec=5
 Environment=PATH=/usr/local/bin:/usr/bin:/bin
@@ -80,7 +79,7 @@ sudo systemctl enable pcap-merger
 sudo systemctl start pcap-merger
 ```
 
-Replace `$USER` and `$HOME` with your actual username and home path.
+Replace `YOUR_USERNAME` with your actual username.
 
 ### 6. Install the Chrome Extension
 
@@ -97,30 +96,6 @@ Replace `$USER` and `$HOME` with your actual username and home path.
 1. Click the 🦈 extension icon — opens in a new tab
 2. Upload your **Full PCAP** and **SIP PCAP** files
 3. Set the **output directory** path and click 💾 Save
-4. Click **🚀 Run All**
-5. Click **⬇️ Download filtered_signaling_and_media.pcap** to get the result
-6. Session auto-refreshes after download for the next analysis
-
----
-
-## Changelog
-
-### v1.2.0
-- **Chrome Extension**: Converted from desktop tkinter app to Chrome extension + Flask backend
-- **Tab-based UI**: Opens in a full Chrome tab (not popup) so file picker doesn't close the UI
-- **CSP compliance**: All inline event handlers moved to JS (no more Content Security Policy errors)
-- **Single download**: Only downloads `filtered_signaling_and_media.pcap` (combined signaling + media)
-- **Auto-refresh**: Session resets after download for quick back-to-back analysis
-- **Signaling IP filtering**: Filters packets between public SIP signaling IPs (INVITE/180/183/200)
-- **SDP media IP filtering**: Filters packets between SDP `c=` line IPs (RTP/media)
-- **Combined export**: Merges signaling + media filtered packets into one PCAP
-- **Persistent config**: Remembers server URL and output directory across sessions
-- **Server status indicator**: Shows connected/offline status in the header
-- **Dark themed UI**: Professional dark mode interface
-- **systemd support**: Can be set up as a Linux service for auto-start on boot
-
-### v1.0.0
-- Initial desktop app (tkinter GUI)
-- PCAP merging via `mergecap`
-- SIP/SDP analysis via `tshark`
-- RTP packet filtering and export
+4. Click **🚀 Run**
+5. Download `filtered_signaling_and_media.pcap` when ready
+6. Session auto-refreshes after download
