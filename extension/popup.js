@@ -18,9 +18,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('logToggle').addEventListener('click', () => toggleSection('logBody'));
   document.getElementById('btnSaveConfig').addEventListener('click', saveConfig);
   document.getElementById('btnSaveDir').addEventListener('click', saveOutputDir);
-  document.getElementById('btnMerge').addEventListener('click', () => runStep('merge'));
-  document.getElementById('btnAnalyze').addEventListener('click', () => runStep('analyze'));
-  document.getElementById('btnFilter').addEventListener('click', () => runStep('filter'));
   document.getElementById('btnRunAll').addEventListener('click', runAll);
   document.getElementById('btnDownload').addEventListener('click', function() {
     downloadFile('filtered_signaling_and_media.pcap');
@@ -73,9 +70,7 @@ function toggleSection(id) {
 }
 
 function setButtonsState(disabled) {
-  ['btnMerge', 'btnAnalyze', 'btnFilter', 'btnRunAll'].forEach(function(id) {
-    document.getElementById(id).disabled = disabled;
-  });
+  document.getElementById('btnRunAll').disabled = disabled;
 }
 
 function showProgress(show, pct) {
